@@ -1,0 +1,29 @@
+
+name: Deploy na EC2 (Master)
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH na EC2
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            cd ~/devops2025
+            git fetch --all
+            git reset --hard origin/master
+            docker rm -f hello-devops || true
+            docker build -t hello-devops:latest .
+            docker run -d --name hello-devops --restart unless-stopped -p 80:80 hello-devops:latest
+            docker ps
+``
