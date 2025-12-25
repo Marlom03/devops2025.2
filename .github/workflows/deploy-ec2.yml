@@ -26,22 +26,22 @@ jobs:
         uses: appleboy/ssh-action@v1.1.0
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}   # admin (Debian)
+          username: ${{ secrets.EC2_USER }}   # admin
           port: 22
           key_path: ~/.ssh/id_rsa
           script_stop: true
           debug: true
           script: |
             set -e
-
             cd /opt/hello-devops
 
             git fetch origin
             git reset --hard origin/master
 
             docker build -t hello-devops:latest .
-
             docker rm -f hello-devops || true
+
+            # Ajuste a porta da direita conforme a porta INTERNA da sua app (ex: 3000)
             docker run -d --name hello-devops --restart unless-stopped -p 80:3000 hello-devops:latest
 
             docker ps
