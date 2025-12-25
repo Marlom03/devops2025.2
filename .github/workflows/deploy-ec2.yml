@@ -41,9 +41,29 @@ jobs:
                   docker rm -f $PORT80_CONTAINERS || true
                 fi
 
-            docker build -t hello-devops:latest .
-            docker rm -f hello-devops 2>/dev/null || true
-            docker run -d --name hello-devops --restart unless-stopped -p 80:3000 hello-devops:latest
-
-            docker ps
-            curl -I http://localhost:80
+           
+                  docker build -t hello-devops:latest .
+                  
+                  # Remove o container antigo (se existir) sem poluir o log
+                  docker rm -f hello-devops 2>/dev/null || true
+                  
+                  docker run -d --name hello-devops --restart unless-stopped -p 80:3000 hello-devops:latest
+                  
+                  docker ps
+                  
+                  # Espera a app subir (retry por ~30s)
+                  for i in {1..15}; do
+                    if curl -fsSI http://localhost:80 >/dev/null; then
+                      echo "Aplicação OK na porta 80"
+                      break
+                    fi
+                    echo "Aguardando aplicação subir... tentativa $i/15"
+                    sleep 2
+                  done
+                  
+                  # Se ainda falhar, mostrar logs e retornar erro
+                  if ! curl -fsSI http://localhost:80; then
+                    echo "Falhou healthcheck. Logs do container:"
+                    docker logs --tail 200 hello-devops || true
+                    exit 1
+                  fi
