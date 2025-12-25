@@ -7,6 +7,42 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      # ... seus passos de deploy (ssh, docker etc)
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_KEY_B64 }}" | base64 -d > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Add EC2 host to known_hosts
+        run: |
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}   # admin (Debian)
+          port: 22
+          key_path: ~/.ssh/id_rsa
+          script_stop: true
+          debug: true
+          script: |
+            set -e
+
+            cd /opt/hello-devops
+
+            git fetch origin
+            git reset --hard origin/master
+
+            docker build -t hello-devops:latest .
+
+            docker rm -f hello-devops || true
+            docker run -d --name hello-devops --restart unless-stopped -p 80:3000 hello-devops:latest
+
+            docker ps
+            curl -I http://localhost:80
