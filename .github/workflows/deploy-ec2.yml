@@ -1,3 +1,4 @@
+
 name: Deploy to EC2
 
 on:
@@ -12,11 +13,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare SSH key
+      # ✅ PEM CRU (sem base64)
+      - name: Prepare SSH key (raw PEM)
+        shell: bash
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_KEY_B64 }}" | base64 -d > ~/.ssh/id_rsa
+          printf '%s' "$EC2_SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
       - name: Add EC2 host to known_hosts
         run: |
@@ -38,6 +43,7 @@ jobs:
             git fetch origin
             git reset --hard origin/master
 
+            # 🔐 Dica: se der "permission denied" no docker, troque para sudo docker (veja abaixo)
             docker build -t hello-devops:latest .
             docker rm -f hello-devops || true
 
@@ -46,3 +52,4 @@ jobs:
 
             docker ps
             curl -I http://localhost:80
+``
