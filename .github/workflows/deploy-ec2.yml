@@ -42,7 +42,7 @@ jobs:
                 fi
 
             docker build -t hello-devops:latest .
-            docker rm -f hello-devops || true
+            docker rm -f hello-devops 2>/dev/null || true
             docker run -d --name hello-devops --restart unless-stopped -p 80:3000 hello-devops:latest
 
             docker ps
