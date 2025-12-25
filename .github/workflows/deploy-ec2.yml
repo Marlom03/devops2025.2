@@ -1,5 +1,5 @@
 
-ame: Deploy to EC2
+name: Deploy to EC2
 
 on:
   push:
