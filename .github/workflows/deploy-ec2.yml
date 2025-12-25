@@ -1,35 +1,4 @@
 
-name: Deploy automático na EC2 (master)
-
 on:
   push:
     branches: ["master"]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy via SSH na EC2
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: 22
-          script: |
-            set -e
-
-            cd ~/devops2025.2
-
-            git fetch origin
-            git reset --hard origin/master
-
-            sudo systemctl start docker || true
-
-            sudo docker rm -f hello-devops || true
-            sudo docker build -t hello-devops:latest .
-            sudo docker run -d --name hello-devops --restart unless-stopped -p 80:80 hello-devops:latest
-
-            sudo docker ps
-            curl -I http://localhost:80
-``
